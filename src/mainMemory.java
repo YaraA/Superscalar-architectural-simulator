@@ -2,18 +2,75 @@ import java.util.ArrayList;
 
 
 public class mainMemory {
-	int noOfLevels;
-	ArrayList<cache> caches = new ArrayList<cache>(); 
+	
 	int memoryCycles; //main memory access time 
 	int capacity= 64 * 1024; //64KB
+	ArrayList<String> insMainMem;
+	ArrayList<Object> dataMainMem;
 	
-	public mainMemory(int noOfLevels, int memoryCycles, int s, int l, int m, String hitWritingPolicy, String missWritingPolicy, int cacheCycles) {
-		this.noOfLevels= noOfLevels;
+	public mainMemory(int memoryCycles) {
 		this.memoryCycles= memoryCycles;
-		for(int i=0; i<noOfLevels; i++) {
-			caches.add(new cache(s,l,m,hitWritingPolicy, missWritingPolicy, cacheCycles));
-		}
+		this.insMainMem= new ArrayList<String>(capacity);
+		this.dataMainMem= new ArrayList<Object>(capacity);
 		
 	}
+
+	public int getMemoryCycles() {
+		return memoryCycles;
+	}
+
+	public void setMemoryCycles(int memoryCycles) {
+		this.memoryCycles = memoryCycles;
+	}
+
+	public int getCapacity() {
+		return capacity;
+	}
+	
+
+	public ArrayList<String> getInsMainMem() {
+		return insMainMem;
+	}
+
+	public void setInsMainMem(ArrayList<String> insMainMem) {
+		this.insMainMem = insMainMem;
+	}
+
+	public ArrayList<Object> getDataMainMem() {
+		return dataMainMem;
+	}
+
+	public void setDataMainMem(ArrayList<Object> dataMainMem) {
+		this.dataMainMem = dataMainMem;
+	}
+
+	public void insertProgram(String assemblyProgram, int programStartingaddr) {
+		String[] linesOfCode= assemblyProgram.split("/n");
+		int noOfLines= linesOfCode.length; //number of lines in assembly program
+		for(int i=0; i<noOfLines; i++)
+			insMainMem.add(programStartingaddr +i, linesOfCode[i]);
+		
+	}
+
+	public void insertProgramData(Object programData, int dataAddr) {
+		dataMainMem.add(dataAddr,programData); 
+		
+	}
+	
+	public String findInstruction (int instructionAddr) { //retrieve a certain instruction from insMainMem
+		return insMainMem.get(instructionAddr);	
+	}
+	
+	public Object findData (int dataAddr) { //retrieve a certain data from dataMainMem
+		return dataMainMem.get(dataAddr);	
+	}
+	
+	public void updateDataMem(int dataAddr, Object newData) {
+		dataMainMem.set(dataAddr, newData);	
+	}
+	
+	
+	
+	
 	
 }
