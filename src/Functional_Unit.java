@@ -5,8 +5,7 @@ public class Functional_Unit {
 	boolean busy;
 	int No_of_exec_cycles;
 	Instruction instruction;
-	int DestReg;
-	int U;
+	String DestReg;
 	
 	public Functional_Unit(UnitType type, int No_of_exec_cycles){
 		this.type = type;
