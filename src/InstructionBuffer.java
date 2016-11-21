@@ -1,10 +1,12 @@
+import java.util.ArrayList;
+
 
 public class InstructionBuffer {
 
-	Instruction [] fetchedInstructions;
+	ArrayList<Instruction> fetchedInstructions;
 	int count;
 	
-	public InstructionBuffer(int size){
-		this.fetchedInstructions = new Instruction[size];
+	public InstructionBuffer(){
+		this.fetchedInstructions = new ArrayList<Instruction>();
 	}
 }

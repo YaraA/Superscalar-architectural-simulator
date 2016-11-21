@@ -3,9 +3,12 @@ public class Instruction {
 	
 	String type;
 	String Fi,Fj,Fk;
-	int Rj,Rk;
+	short Vi,Vj,Vk;
 	String status;
-	String Qj,Qk;
+	int Qj = -1;
+	int Qk = -1;
 	int No_of_cycles;
+	byte immediate;
+	int FUindex;
 
 }

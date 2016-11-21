@@ -6,6 +6,7 @@ public class ROBEntry {
 	private String destination;
 	private short value;
 	private boolean ready;
+	boolean empty=true;
 	
 	public ROBEntry(int id, String type, String destination, short value, boolean ready) {
 		

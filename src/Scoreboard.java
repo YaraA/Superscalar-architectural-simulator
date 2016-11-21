@@ -1,10 +1,10 @@
 
 public class Scoreboard {
 
-	scoreboardEntry [] scoreboard;
+	scoreboardEntry [] Scoreboard_Entries;
 	int count;
 	
 	public Scoreboard(int size){
-		scoreboard = new scoreboardEntry[size];
+		Scoreboard_Entries = new scoreboardEntry[size];
 	}
 }

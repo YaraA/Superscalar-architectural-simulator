@@ -10,6 +10,10 @@ public class ROB {
 
 	public ROB(int sizeOfROB) {
 		ROBContent = new ROBEntry[sizeOfROB];
+		
+		for(int i = 0; i < ROBContent.length;i++){
+			ROBContent[i].setId(i);
+		}
 	}
 
 }

@@ -2,5 +2,9 @@
 public class Register {
 
 	String name;
-	short value;
+
+	public Register(String name) {
+		this.name = name;
+	}
+	
 }
