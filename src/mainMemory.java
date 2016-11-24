@@ -4,7 +4,7 @@ import java.util.ArrayList;
 public class mainMemory {
 	
 	int memoryCycles; //main memory access time 
-	int capacity= 64 * 1024; //64KB
+	int capacity= (64 * 1024)/2; //64KB //if word addressable /2 if byte addressable remove the division 
 	ArrayList<String> insMainMem;
 	ArrayList<Object> dataMainMem;
 	
