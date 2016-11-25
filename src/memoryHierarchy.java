@@ -56,5 +56,47 @@ public class memoryHierarchy {
 	public void setNoOfLevels(int noOfLevels) {
 		this.noOfLevels = noOfLevels;
 	}
+	
+	public short getData(int address){
+		
+		for(int i=0; i<dataCaches.size();i++){
+			if(!dataCaches.get(i).blocks.isEmpty()) {
+				Object data= dataCaches.get(i).searchCache(address);
+				if(data != null){
+					return (short) data;
+				}
+			}
+		}
+		Object data= mainMemory.findData(address);
+		this.insertDataInAllCaches(address,data);
+		return (short)data;
+		
+		
+	}
+	public String getInstruction(int address){
+		
+		Object ins;
+		for(int i=0; i<insCaches.size();i++){
+			if(!insCaches.get(i).blocks.isEmpty()) {
+				ins= insCaches.get(i).searchCache(address);
+				if(ins != null){
+					return (String) ins;
+				}
+			}
+		}
+		ins= mainMemory.findInstruction(address);
+		this.insertDataInAllCaches(address,ins);
+		return (String)ins;
+		
+		
+	}
+
+
+	private void insertDataInAllCaches(int address, Object data) {
+		for(int i=0; i<dataCaches.size();i++){
+			dataCaches.get(i).insert(address, data);
+		}
+		
+	}
 
 }
