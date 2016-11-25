@@ -10,5 +10,10 @@ public class Instruction {
 	int No_of_cycles;
 	byte immediate;
 	int FUindex;
+	boolean branchTaken;
+	short calculatedAddress;
+	short address;
+	int executeCount;
+	int executionCycles;
 
 }

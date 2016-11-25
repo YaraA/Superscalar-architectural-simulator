@@ -5,7 +5,7 @@ public class hardwareOrganization {
 
 	int [] reservationStations;
 	normalRegister PC;
-	InstructionBuffer instructionBuffer;
+	ArrayList<Instruction> instructionBuffer;
 	RegisterStatusTable regStatusTable;
 	Register_File registerFile;
 	memory memory;
@@ -34,8 +34,8 @@ public class hardwareOrganization {
 		Load = new Functional_Unit [FUs[4]];
 		Store = new Functional_Unit [FUs[5]];
 		ROB = new ROB(ROBsize);
-		int scoreboard_size = Add.length + Subtract.length + Nand.length + Mult.length + Load.length + Store.length;
-		scoreboard = new Scoreboard(scoreboard_size);
+		
+		scoreboard = new Scoreboard(Add.length , Subtract.length , Nand.length , Mult.length , Load.length ,Store.length);
 		
 		for(int i = 0; i < Add.length; i++){
 			Add[i] = new Functional_Unit(UnitType.ADD, cycles[0]);
@@ -61,13 +61,13 @@ public class hardwareOrganization {
 			Store[i] = new Functional_Unit(UnitType.STORE, cycles[5]);
 		}
 		
-		this.instructionBuffer = new InstructionBuffer();
+		this.instructionBuffer = new ArrayList<Instruction>();
 		PC.value = startingAddress;
 	}
 	
-	public void fetch(int address,int fetchCount){
+	public void fetch(int fetchCount){
 		String[] instr;
-		instr = memory.fetchInstructions(address,fetchCount);
+		instr = memory.fetchInstructions(PC.value,fetchCount);
 		 
 		for(int i = 0; i < instr.length; i++){
 		  
@@ -77,6 +77,7 @@ public class hardwareOrganization {
 		  Instruction instruction = new Instruction();
 		  instruction.type = part1[0];
 		  instruction.Fi = part2[0];
+		  instruction.address = PC.value;
 		  if(!(instruction.type.equalsIgnoreCase("jmp") && instruction.type.equalsIgnoreCase("jalr")))
 		  {
 		  instruction.Fj = part2[1];
@@ -98,20 +99,21 @@ public class hardwareOrganization {
 			  }
 		  }
 		  instruction.status = "Fetched";
+		  PC.value++;
 		
 		  instruction.No_of_cycles++;
-		  instructionBuffer.fetchedInstructions.add(instruction);
-		  instructionBuffer.count++;
+		  instructionBuffer.add(instruction);
 		  
 		  if(!(regStatusTable.statusTable.contains(instruction.Fj)))
 			  regStatusTable.statusTable.put(instruction.Fi, null);
 		}
 	}
 	
-	public void issue(Instruction instruction){
+	public boolean issue(Instruction instruction){
 		int freeFU = 0;
 		boolean freeROB = false;
 		int index = 0;
+		boolean issued=false;
 		
 		if(regStatusTable.statusTable.get(instruction.Fi) != null){
 			System.out.println("Stalled due to WAW hazard");
@@ -192,7 +194,7 @@ public class hardwareOrganization {
 		
 		if(freeFU != 0)
 		{ 
-			boolean issued=false;
+			
 			for(int i=0;i<ROB.ROBContent.length;i++){
 			   if(ROB.ROBContent[i].empty==true){
 				    ROB.ROBContent[i].setDestination(instruction.Fi);
@@ -207,63 +209,6 @@ public class hardwareOrganization {
 			}
 			else
 			{
-				
-				
-				switch(freeFU)
-				{
-					case 1: {   Add[index].busy = true;
-								Add[index].instruction = instruction;
-								Add[index].DestReg = instruction.Fi;
-								instruction.FUindex = index;
-								break;
-							}
-					case 2: {	Subtract[index].busy = true;
-								Subtract[index].instruction = instruction;
-								Subtract[index].DestReg = instruction.Fi;
-								instruction.FUindex = index;
-								break;
-							}
-					case 3: {	Mult[index].busy = true;
-								Mult[index].instruction = instruction;
-								Mult[index].DestReg = instruction.Fi;
-								instruction.FUindex = index;
-								break;
-							}
-					case 4: {	Nand[index].busy = true;
-								Nand[index].instruction = instruction;
-								Nand[index].DestReg = instruction.Fi;
-								instruction.FUindex = index;
-								break;
-							}
-					case 5: {	Load[index].busy = true;
-								Load[index].instruction = instruction;
-								Load[index].DestReg = instruction.Fi;
-								instruction.FUindex = index;
-								break;
-							}
-					case 6: {	Store[index].busy = true;
-								Store[index].instruction = instruction;
-								instruction.FUindex = index;
-								break;
-							}
-				}
-				
-				instruction.status = "Issued";
-				
-				regStatusTable.statusTable.put(instruction.Fi,ROB.ROBContent[ROB.TailPointer].getId());
-				
-				if(regStatusTable.statusTable.containsKey(instruction.Fj) && regStatusTable.statusTable.get(instruction.Fj) != null){
-					instruction.Qj=(int) regStatusTable.statusTable.get(instruction.Fj);
-				}
-				if(regStatusTable.statusTable.containsKey(instruction.Fk) && regStatusTable.statusTable.get(instruction.Fk) != null){
-					instruction.Qk=(int) regStatusTable.statusTable.get(instruction.Fk);
-				}
-				
-				if(ROB.TailPointer == ROB.ROBContent.length -1)
-				  ROB.TailPointer = 0;
-				else
-					ROB.TailPointer++;
-				
 				if(instruction.type.equalsIgnoreCase("add") 
 						|| instruction.type.equalsIgnoreCase("sub") 
 							|| instruction.type.equalsIgnoreCase("mul") 
@@ -325,15 +270,121 @@ public class hardwareOrganization {
 					}
 					
 				}
+				
+				if(instruction.type.equalsIgnoreCase("BEQ"))
+				{
+				 if(instruction.immediate >= 0)
+					 instruction.branchTaken = false;
+				 else
+					 instruction.branchTaken = true;
+				}
+				
+				switch(freeFU)
+				{
+					case 1: {   Add[index].busy = true;
+								Add[index].instruction = instruction;
+								Add[index].DestReg = instruction.Fi;
+								instruction.FUindex = index;
+								scoreboard.Add_Scoreboard_Entries[index].instruction = instruction;
+								scoreboard.Add_Scoreboard_Entries[index].dest = ROB.TailPointer;
+								scoreboard.Add_Scoreboard_Entries[index].notEmpty = true;
+								break;
+							}
+					case 2: {	Subtract[index].busy = true;
+								Subtract[index].instruction = instruction;
+								Subtract[index].DestReg = instruction.Fi;
+								instruction.FUindex = index;
+								scoreboard.Subtract_Scoreboard_Entries[index].instruction = instruction;
+								scoreboard.Subtract_Scoreboard_Entries[index].dest = ROB.TailPointer;
+								scoreboard.Subtract_Scoreboard_Entries[index].notEmpty = true;
+								break;
+							}
+					case 3: {	
+								Mult[index].busy = true;
+								Mult[index].instruction = instruction;
+								Mult[index].DestReg = instruction.Fi;
+								instruction.FUindex = index;
+								scoreboard.Multiply_Scoreboard_Entries[index].instruction = instruction;
+								scoreboard.Multiply_Scoreboard_Entries[index].dest = ROB.TailPointer;
+								scoreboard.Multiply_Scoreboard_Entries[index].notEmpty = true;
+								break;
+							}
+					case 4: {	Nand[index].busy = true;
+								Nand[index].instruction = instruction;
+								Nand[index].DestReg = instruction.Fi;
+								instruction.FUindex = index;
+								scoreboard.Nand_Scoreboard_Entries[index].instruction = instruction;
+								scoreboard.Nand_Scoreboard_Entries[index].dest = ROB.TailPointer;
+								scoreboard.Nand_Scoreboard_Entries[index].notEmpty = true;
+								break;
+							}
+					case 5: {	Load[index].busy = true;
+								Load[index].instruction = instruction;
+								Load[index].DestReg = instruction.Fi;
+								instruction.FUindex = index;
+								scoreboard.Load_Scoreboard_Entries[index].instruction = instruction;
+								scoreboard.Load_Scoreboard_Entries[index].dest = ROB.TailPointer;
+								scoreboard.Load_Scoreboard_Entries[index].notEmpty = true;
+								break;
+							}
+					case 6: {	Store[index].busy = true;
+								Store[index].instruction = instruction;
+								instruction.FUindex = index;
+								scoreboard.Store_Scoreboard_Entries[index].instruction = instruction;
+								scoreboard.Store_Scoreboard_Entries[index].dest = ROB.TailPointer;
+								scoreboard.Store_Scoreboard_Entries[index].notEmpty = true;
+								break;
+							}
+				}
+				
+				regStatusTable.statusTable.put(instruction.Fi,ROB.TailPointer);
+				
+				if(regStatusTable.statusTable.containsKey(instruction.Fj) && regStatusTable.statusTable.get(instruction.Fj) != null){
+					instruction.Qj=(int) regStatusTable.statusTable.get(instruction.Fj);
+				}
+				if(regStatusTable.statusTable.containsKey(instruction.Fk) && regStatusTable.statusTable.get(instruction.Fk) != null){
+					instruction.Qk=(int) regStatusTable.statusTable.get(instruction.Fk);
+				}
+				
+				if(regStatusTable.statusTable.containsKey(instruction.Fi) && regStatusTable.statusTable.get(instruction.Fi) != null){
+					regStatusTable.statusTable.remove(instruction.Fi);
+					regStatusTable.statusTable.put(instruction.Fi,ROB.TailPointer);
+				}
+				
+				if(ROB.TailPointer == ROB.ROBContent.length -1)
+				  ROB.TailPointer = 0;
+				else
+					ROB.TailPointer++;
+				
+				instruction.status = "Issued";
+				instructionBuffer.remove(instruction);
+				
 			}
 			//else System.out.println("There is no free ROB entries");	
 		  }
 		  else System.out.println("There is no free functional unit");
 		}
 		instruction.No_of_cycles++;
+		return issued;
+	}
+	
+	public void calculateAddress(Instruction instruction){
+		
+		if(instruction.type.equalsIgnoreCase("LW")){
+		 instruction.calculatedAddress = (short) (instruction.Vj + instruction.immediate);
+		 scoreboard.Load_Scoreboard_Entries[instruction.FUindex].address = instruction.calculatedAddress;
+		}
+		else 
+			if(instruction.type.equalsIgnoreCase("SW")){
+			instruction.calculatedAddress = (short) (instruction.Vj + instruction.immediate);
+			scoreboard.Store_Scoreboard_Entries[instruction.FUindex].address = instruction.calculatedAddress;
+			}
+		
+		instruction.No_of_cycles++;
 	}
 	
 	public void execute(Instruction instruction){
+		if(instruction.executeCount == 0){
 		if(instruction.Qj != -1 || instruction.Qk != -1){
 			System.out.println("Stalled due to RAW hazard");
 			instruction.No_of_cycles++;
@@ -360,7 +411,6 @@ public class hardwareOrganization {
 						if(instruction.Vi == 0)
 						{
 						 address = (short) (PC.value + 1 + instruction.immediate); 
-						 //prediction part
 						}
 						else{
 							address = (short) (PC.value + 1);
@@ -411,60 +461,102 @@ public class hardwareOrganization {
 			}
 		  instruction.status = "Executed";
 		}
+		}
+		else{
+			if(instruction.executeCount < instruction.executionCycles && instruction.status.equalsIgnoreCase("Executed"))
+				instruction.executeCount++;
+		}
 	}
 	
 	public void write(Instruction instruction){
-		boolean stalled=false;
-		for(int i = 0; i < scoreboard.Scoreboard_Entries.length; i++){
-			if(scoreboard.Scoreboard_Entries[i].instruction != null 
-					&& (scoreboard.Scoreboard_Entries[i].instruction.Fj.equalsIgnoreCase(instruction.Fi)
-							|| scoreboard.Scoreboard_Entries[i].instruction.Fk.equalsIgnoreCase(instruction.Fi)))
-			{ 
-				stalled=true;
-				System.out.println("Stalled due to WAR hazard");
-				break;
+		
+		int ROBId = -1;
+		
+		if(instruction.type.equalsIgnoreCase("add") || instruction.type.equalsIgnoreCase("addi")){
+			ROBId = scoreboard.Add_Scoreboard_Entries[instruction.FUindex].dest;
+			scoreboard.Add_Scoreboard_Entries[instruction.FUindex].notEmpty = false;
 			}
-		}
-		if(stalled==false){
-		int ROBId=(int) regStatusTable.statusTable.get(instruction.Fi);
-		for(int i = 0; i < scoreboard.Scoreboard_Entries.length; i++){
-			if( scoreboard.Scoreboard_Entries[i].instruction != null 
-					&&  scoreboard.Scoreboard_Entries[i].dest==ROBId){
-				 scoreboard.Scoreboard_Entries[i].instruction=null;
-				 scoreboard.Scoreboard_Entries[i].address=-1;
-				 scoreboard.Scoreboard_Entries[i].dest=-1;
-				 
-				 
-			}
-			
-			
-		}
-		for(int i=0; i<ROB.ROBContent.length;i++){
-			if(ROB.ROBContent[i].getId()==ROBId){
-				ROB.ROBContent[i].setReady(true);
-				ROB.ROBContent[i].setValue(instruction.Vi);
+		else
+			if(instruction.type.equalsIgnoreCase("sub")){
+				ROBId = scoreboard.Subtract_Scoreboard_Entries[instruction.FUindex].dest;
+				scoreboard.Subtract_Scoreboard_Entries[instruction.FUindex].notEmpty = false;
+				}
+			else
+				if(instruction.type.equalsIgnoreCase("mul")){
+					ROBId = scoreboard.Multiply_Scoreboard_Entries[instruction.FUindex].dest;
+					scoreboard.Multiply_Scoreboard_Entries[instruction.FUindex].notEmpty = false;
+					}
+				else
+					if(instruction.type.equalsIgnoreCase("nand")){
+						ROBId = scoreboard.Nand_Scoreboard_Entries[instruction.FUindex].dest;
+						scoreboard.Nand_Scoreboard_Entries[instruction.FUindex].notEmpty = false;
+						}
+		
+		for(int i = 0; i < scoreboard.Add_Scoreboard_Entries.length; i++){
+			if(scoreboard.Add_Scoreboard_Entries[i].instruction.Qj == ROBId)
+				scoreboard.Add_Scoreboard_Entries[i].instruction.Qj = -1;
 				
-			}
-			
-			
+			if(scoreboard.Add_Scoreboard_Entries[i].instruction.Qk == ROBId)
+					scoreboard.Add_Scoreboard_Entries[i].instruction.Qk = -1;
 		}
+		
+		for(int i = 0; i < scoreboard.Subtract_Scoreboard_Entries.length; i++){
+			if(scoreboard.Subtract_Scoreboard_Entries[i].instruction.Qj == ROBId)
+				scoreboard.Subtract_Scoreboard_Entries[i].instruction.Qj = -1;
+				
+			if(scoreboard.Subtract_Scoreboard_Entries[i].instruction.Qk == ROBId)
+					scoreboard.Subtract_Scoreboard_Entries[i].instruction.Qk = -1;
+		}
+		
+		for(int i = 0; i < scoreboard.Multiply_Scoreboard_Entries.length; i++){
+			if(scoreboard.Multiply_Scoreboard_Entries[i].instruction.Qj == ROBId)
+				scoreboard.Multiply_Scoreboard_Entries[i].instruction.Qj = -1;
+				
+			if(scoreboard.Multiply_Scoreboard_Entries[i].instruction.Qk == ROBId)
+					scoreboard.Multiply_Scoreboard_Entries[i].instruction.Qk = -1;
+		}
+		
+		for(int i = 0; i < scoreboard.Nand_Scoreboard_Entries.length; i++){
+			if(scoreboard.Nand_Scoreboard_Entries[i].instruction.Qj == ROBId)
+				scoreboard.Nand_Scoreboard_Entries[i].instruction.Qj = -1;
+				
+			if(scoreboard.Nand_Scoreboard_Entries[i].instruction.Qk == ROBId)
+					scoreboard.Nand_Scoreboard_Entries[i].instruction.Qk = -1;
+		}
+		
+		for(int i = 0; i < scoreboard.Load_Scoreboard_Entries.length; i++){
+			if(scoreboard.Load_Scoreboard_Entries[i].instruction.Qj == ROBId)
+				scoreboard.Load_Scoreboard_Entries[i].instruction.Qj = -1;
+			
+			if(scoreboard.Load_Scoreboard_Entries[i].instruction.Qk == ROBId)
+					scoreboard.Load_Scoreboard_Entries[i].instruction.Qk = -1;
+		}
+		
+		for(int i = 0; i < scoreboard.Store_Scoreboard_Entries.length; i++){
+			if(scoreboard.Store_Scoreboard_Entries[i].instruction.Qj == ROBId)
+				scoreboard.Store_Scoreboard_Entries[i].instruction.Qj = -1;
+			
+			if(scoreboard.Store_Scoreboard_Entries[i].instruction.Qk == ROBId)
+					scoreboard.Store_Scoreboard_Entries[i].instruction.Qk = -1;
+		}
+		
+		ROB.ROBContent[ROBId].setReady(true);
+		ROB.ROBContent[ROBId].setValue(instruction.Vi);
 		instruction.status="written";
-		
-		}
-		
-		
-		
 		instruction.No_of_cycles++;
+		
 	}
 	
 	public void commit(Instruction instruction){
 		
 		for (int i=0; i<ROB.ROBContent.length;i++){
-			if(instruction.Fi==ROB.ROBContent[i].getDestination()){
-				if(ROB.ROBContent[i].getId()==ROB.HeadPointer){
-					ROB.ROBContent[i].empty=true;
-				    regStatusTable.statusTable.remove(instruction.Fi);
-				    regStatusTable.statusTable.put(instruction.Fi,null);
+			if(instruction.Fi == ROB.ROBContent[i].getDestination()){
+				if(ROB.ROBContent[i].getId() == ROB.HeadPointer){
+					
+					if(((int)regStatusTable.statusTable.get(instruction.Fi)) == ROB.ROBContent[i].getId()){
+						regStatusTable.statusTable.remove(instruction.Fi);
+						regStatusTable.statusTable.put(instruction.Fi,null);
+				    }
 				    for(int k=0;k<registerFile.registers.length;k++){
 				    	if(!registerFile.registers[k].name.equalsIgnoreCase("R0")){
 				    		if(registerFile.registers[k].name.equals(instruction.Fi)){
@@ -473,19 +565,122 @@ public class hardwareOrganization {
 				    	}
 				    	
 				    }
+				    ROB.ROBContent[i].empty=true;
 				    
 				    if(ROB.HeadPointer == ROB.ROBContent.length -1)
 						  ROB.HeadPointer = 0;
-						else
-							ROB.HeadPointer++;
-			       }
+					else
+						ROB.HeadPointer++;
+				    
+				    instruction.status="Commited";
+				    instructionsCompleted.add(instruction);
+				    break;
+					}
 				}
+			
 		}
-		instruction.status="Commit";
-		
+			
 	}
 	
-	
-	
-	
-}
+	public void Tomasulo(int Count){
+		
+		//Scoreboard myScoreBoard = new Scoreboard(this.scoreboard.Add_Scoreboard_Entries.length,this.scoreboard.Subtract_Scoreboard_Entries.length,this.scoreboard.Multiply_Scoreboard_Entries.length,this.scoreboard.Nand_Scoreboard_Entries.length,this.scoreboard.Load_Scoreboard_Entries.length,this.scoreboard.Store_Scoreboard_Entries.length);
+		//myScoreBoard.Add_Scoreboard_Entries = this.scoreboard.Add_Scoreboard_Entries;
+		
+		Scoreboard myScoreBoard = this.scoreboard;
+		fetch(Count);
+		
+		for(int i=0; i<Count && i < this.instructionBuffer.size();i++)
+		{
+		 if(!issue(this.instructionBuffer.get(i)))
+			 break;
+		}
+		
+		for(int i=0;i < myScoreBoard.Add_Scoreboard_Entries.length;i++){
+			if(myScoreBoard.Add_Scoreboard_Entries[i].notEmpty==true){
+				if(myScoreBoard.Add_Scoreboard_Entries[i].instruction.status.equalsIgnoreCase("isssued")){
+					while(myScoreBoard.Add_Scoreboard_Entries[i].instruction.executeCount < myScoreBoard.Add_Scoreboard_Entries[i].instruction.executionCycles)
+						execute(myScoreBoard.Add_Scoreboard_Entries[i].instruction);
+				}
+				if(myScoreBoard.Add_Scoreboard_Entries[i].instruction.status.equalsIgnoreCase("executed")){
+					write(myScoreBoard.Add_Scoreboard_Entries[i].instruction);
+				}
+				if(myScoreBoard.Add_Scoreboard_Entries[i].instruction.status.equalsIgnoreCase("written")){
+					commit(myScoreBoard.Add_Scoreboard_Entries[i].instruction);
+				}
+			}
+		}
+			for(int i=0;i < myScoreBoard.Subtract_Scoreboard_Entries.length;i++){
+				if(myScoreBoard.Subtract_Scoreboard_Entries[i].notEmpty==true){
+					if(myScoreBoard.Subtract_Scoreboard_Entries[i].instruction.status.equalsIgnoreCase("isssued")){
+						while(myScoreBoard.Subtract_Scoreboard_Entries[i].instruction.executeCount < myScoreBoard.Subtract_Scoreboard_Entries[i].instruction.executionCycles)
+							execute(myScoreBoard.Subtract_Scoreboard_Entries[i].instruction);
+					}
+					if(myScoreBoard.Subtract_Scoreboard_Entries[i].instruction.status.equalsIgnoreCase("executed")){
+						write(myScoreBoard.Subtract_Scoreboard_Entries[i].instruction);
+					}
+					if(myScoreBoard.Subtract_Scoreboard_Entries[i].instruction.status.equalsIgnoreCase("written")){
+						commit(myScoreBoard.Subtract_Scoreboard_Entries[i].instruction);
+					}
+				}
+			}
+				for(int i=0;i < myScoreBoard.Multiply_Scoreboard_Entries.length;i++){
+					if(myScoreBoard.Multiply_Scoreboard_Entries[i].notEmpty==true){
+						if(myScoreBoard.Multiply_Scoreboard_Entries[i].instruction.status.equalsIgnoreCase("isssued")){
+							while(myScoreBoard.Multiply_Scoreboard_Entries[i].instruction.executeCount < myScoreBoard.Multiply_Scoreboard_Entries[i].instruction.executionCycles)
+								execute(myScoreBoard.Multiply_Scoreboard_Entries[i].instruction);
+						}
+						if(myScoreBoard.Multiply_Scoreboard_Entries[i].instruction.status.equalsIgnoreCase("executed")){
+							write(myScoreBoard.Multiply_Scoreboard_Entries[i].instruction);
+						}
+						if(myScoreBoard.Multiply_Scoreboard_Entries[i].instruction.status.equalsIgnoreCase("written")){
+							commit(myScoreBoard.Multiply_Scoreboard_Entries[i].instruction);
+						}
+					}
+				}
+			for(int i=0;i < myScoreBoard.Nand_Scoreboard_Entries.length;i++){
+				if(myScoreBoard.Nand_Scoreboard_Entries[i].notEmpty==true){
+					if(myScoreBoard.Nand_Scoreboard_Entries[i].instruction.status.equalsIgnoreCase("isssued")){
+						while(myScoreBoard.Nand_Scoreboard_Entries[i].instruction.executeCount < myScoreBoard.Nand_Scoreboard_Entries[i].instruction.executionCycles)
+							execute(myScoreBoard.Nand_Scoreboard_Entries[i].instruction);
+					}
+					if(myScoreBoard.Nand_Scoreboard_Entries[i].instruction.status.equalsIgnoreCase("executed")){
+						write(myScoreBoard.Nand_Scoreboard_Entries[i].instruction);
+					}
+					if(myScoreBoard.Nand_Scoreboard_Entries[i].instruction.status.equalsIgnoreCase("written")){
+						commit(myScoreBoard.Nand_Scoreboard_Entries[i].instruction);
+					}
+				}
+			}
+			for(int i=0;i < myScoreBoard.Load_Scoreboard_Entries.length;i++){
+				if(myScoreBoard.Load_Scoreboard_Entries[i].notEmpty==true){
+					if(myScoreBoard.Load_Scoreboard_Entries[i].instruction.status.equalsIgnoreCase("isssued")){
+						while(myScoreBoard.Load_Scoreboard_Entries[i].instruction.executeCount < myScoreBoard.Load_Scoreboard_Entries[i].instruction.executionCycles)
+							execute(myScoreBoard.Load_Scoreboard_Entries[i].instruction);
+					}
+					if(myScoreBoard.Load_Scoreboard_Entries[i].instruction.status.equalsIgnoreCase("executed")){
+						write(myScoreBoard.Load_Scoreboard_Entries[i].instruction);
+					}
+					if(myScoreBoard.Load_Scoreboard_Entries[i].instruction.status.equalsIgnoreCase("written")){
+						commit(myScoreBoard.Load_Scoreboard_Entries[i].instruction);
+					}
+				}
+			}
+			for(int i=0;i < myScoreBoard.Store_Scoreboard_Entries.length;i++){
+					if(myScoreBoard.Store_Scoreboard_Entries[i].notEmpty==true){
+						if(myScoreBoard.Store_Scoreboard_Entries[i].instruction.status.equalsIgnoreCase("isssued")){
+							while(myScoreBoard.Store_Scoreboard_Entries[i].instruction.executeCount < myScoreBoard.Store_Scoreboard_Entries[i].instruction.executionCycles)
+							execute(myScoreBoard.Store_Scoreboard_Entries[i].instruction);
+						}
+						if(myScoreBoard.Store_Scoreboard_Entries[i].instruction.status.equalsIgnoreCase("executed")){
+							write(myScoreBoard.Store_Scoreboard_Entries[i].instruction);
+						}
+						if(myScoreBoard.Store_Scoreboard_Entries[i].instruction.status.equalsIgnoreCase("written")){
+							commit(myScoreBoard.Store_Scoreboard_Entries[i].instruction);
+						}
+					}
+			}
+			
+		}
+		
+	}

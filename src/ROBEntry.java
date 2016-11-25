@@ -8,13 +8,9 @@ public class ROBEntry {
 	private boolean ready;
 	boolean empty=true;
 	
-	public ROBEntry(int id, String type, String destination, short value, boolean ready) {
+	public ROBEntry(int id) {
 		
 		this.id = id;
-		this.type = type;
-		this.destination = destination;
-		this.value = value;
-		this.ready = ready;
 	}
 	
 	public int getId() {
