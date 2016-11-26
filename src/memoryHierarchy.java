@@ -85,7 +85,7 @@ public class memoryHierarchy {
 			}
 		}
 		ins= mainMemory.findInstruction(address);
-		this.insertDataInAllCaches(address,ins);
+		this.insertInsInAllCaches(address,ins);
 		return (String)ins;
 		
 		
@@ -94,9 +94,92 @@ public class memoryHierarchy {
 
 	private void insertDataInAllCaches(int address, Object data) {
 		for(int i=0; i<dataCaches.size();i++){
-			dataCaches.get(i).insert(address, data);
+			Object[] o=dataCaches.get(i).insert(address, data);
+			if(o!=null){
+				mainMemory.insertProgramData(o[0], (int) o[1]);
+			}
 		}
 		
 	}
+	
+	private void insertInsInAllCaches(int address, Object ins) {
+		for(int i=0; i<insCaches.size();i++){
+			Object[] o=insCaches.get(i).insert(address, ins);
+			if(o!=null){
+				mainMemory.insertProgramData(o[0], (int) o[1]);
+			}
+		}
+		
+	}
+	public void Write(int addr, Object data){
+		Object o;
+		int count=0;
+		for(int i=0;i<dataCaches.size();i++){
+			o=dataCaches.get(i).searchCache(addr);
+			if(o == null){
+				//writeMiss(i,addr,data);
+				//break;
+				count++;
+			}else{
+				if(dataCaches.get(i).hitWritingPolicy==1)
+					writeBack(i,addr,data);
+				else
+					writeThrough(addr,data);
+				break;
+				
+			}
+		}
+		if(count==dataCaches.size()) {
+			writeMiss(addr,data);
+		}
+	}
+	
+public void writeMiss(int addr, Object data) {
+//	for(int i=0;i<cacheLevel;i++){
+//		dataCaches.get(i).insert(addr,data);
+//	}
+	this.insertDataInAllCaches(addr,data);
+	this.mainMemory.insertProgramData(data, addr);
+	
+}
+
+
+public void writeBack(int cacheLevel,int addr,Object data) {
+	ArrayList<block> blocks= dataCaches.get(cacheLevel).getBlocks();
+	int m= dataCaches.get(cacheLevel).getM();
+	int c=dataCaches.get(cacheLevel).getC();
+	int index= dataCaches.get(cacheLevel).calculateIndex(addr);
+	if(m==1){
+		blocks.get(index).setInsOrData(data);
+		blocks.get(index).setDirtyBit(true);
+	}
+	if(m>1 && m<c) {
+		for(int i=index*m; i<index*m+m; i++) {
+			if(addr==blocks.get(i).getMainMemoryAddr()) {
+				blocks.get(i).setInsOrData(data);
+				blocks.get(i).setDirtyBit(true);
+			}
+		}
+	}
+	if(m==c){
+		for(int i=0; i<blocks.size();i++) {
+			if(addr==blocks.get(i).getMainMemoryAddr()) {
+				blocks.get(i).setInsOrData(data);
+				blocks.get(i).setDirtyBit(true);
+			}		
+		}		
+	}
+	
+	
+}
+
+public void writeThrough(int addr,Object data) {
+	for(int i=0;i<dataCaches.size();i++){
+		dataCaches.get(i).insert(addr,data);
+		
+	}
+	//insert in main memory
+	mainMemory.insertProgramData(data, addr);
+}
 
 }

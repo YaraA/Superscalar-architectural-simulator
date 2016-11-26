@@ -89,21 +89,25 @@ public class cache {
 	public int calculateOffset() {
 		return (int) (Math.log(this.l) / Math.log(2));
 	}
-	public int calculateIndex() {
+	public int calculateIndex(int addr) {
 		int index=0;
 		if(this.m!=this.c)
-			index = (int) (Math.log(this.c/this.m)/ Math.log(2));
+			index=(addr/l)%m;
+			//index = (int) (Math.log(this.c/this.m)/ Math.log(2));
 		return index;	
 	}
-	public int calculateTag() {
+	public int calculateTag(int addr) {
 		int offset= calculateOffset();
-		int index= calculateIndex();
-		return 16 - index -offset;
+		int index= calculateIndex(addr);
+		return (addr/l)/m;
+		//return 16 - index -offset;
 	}
 	
 	public Object searchCache(int addr){
-		int index= calculateIndex();
-		int tag= calculateTag();
+		boolean foundF = false;
+		boolean foundS = false;
+		int index= calculateIndex(addr);
+		int tag= calculateTag(addr);
 		if(m==1) { //direct mapped
 			//check if index holds tag
 			if(this.blocks.get(index).getTag()==tag) //hit
@@ -114,14 +118,17 @@ public class cache {
 			}
 		}
 		else if(m>1 && m<c){ //set associative 
-			for(int k=0;(k/m)==index;k=k+m){
+			for(int k=0;(k/m)<=index;k=k+m){
+				if(k/m == index){
 				for(int i=0;i<m;i++){
-					if(this.blocks.get(index).getTag()==tag)
-						return this.blocks.get(index).getInsOrData();
-					else{
-						misses++;
-						return null;
+					if(this.blocks.get(index*m+i).getTag()==tag){
+						foundS = true;
+						return this.blocks.get(index*m+i).getInsOrData();
 					}
+				}
+				if(!foundS)
+					misses++;
+				
 				}
 					
 			}
@@ -129,58 +136,71 @@ public class cache {
 		}
 		if(m==c) {//fully associative
 			for(int i=0; i<blocks.size(); i++){
-				if(this.blocks.get(i).getTag()==tag)
+				if(this.blocks.get(i).getTag()==tag){
+					foundF = true;
 					return this.blocks.get(i).getInsOrData();
-				else {
-					misses++;
-					return null; 
 				}
+				
 			}
+			if(!foundF)
+				misses++;
 		}
-		return tag;
+		return null;
 			
 		
 	}
-	public boolean insert(int addr, Object data){
+	public Object[] insert(int addr, Object data){
 		
-		int index = calculateIndex();
+		int index = calculateIndex(addr);
 		int offset = calculateOffset();
-		int tag = calculateTag();
-		//if(data instanceof Integer && data<65535){
+		int tag = calculateTag(addr);
+		Object [] dirtyInfo= new Object [2];
+		boolean space=false;
 		if(m ==1){
+			if(this.blocks.get(index).isDirtyBit()) {
+				dirtyInfo[0]=this.blocks.get(index).getInsOrData();
+				dirtyInfo[1]=addr;
+			}
 			this.blocks.add(index, new block(false,true,addr,data)); 
-			return true;
 		}
 		if(m ==c){
-			if(blocks.size()==c)
-				return false;
+			if(blocks.size()==c) {
+				if(this.blocks.get(0).isDirtyBit()) {
+					dirtyInfo[0]=this.blocks.get(0).getInsOrData();
+					dirtyInfo[1]=addr;
+				}
+				this.blocks.add(0, new block(false,true,addr,data));
+				//return false;//insert at position 0
+			}
 			else {
 				this.blocks.add(new block(false,true,addr,data)); 			
-				return true;
+				//return true;
 			}
 		}
 		if(m>1 && m<c) {
-			for(int k=0;(k/m)==index;k=k+m){
-				for(int i=0;i<m;i++){
-					if(this.blocks.get(i) == null) {//get i or get tag??
-						this.blocks.add(i, new block(false,true,addr,data)); 
-						return true;
+			for(int k=0;(k/m)<=index;k=k+m){
+				if(k/m==index) {
+					for(int i=0;i<m;i++){
+						if(this.blocks.get(i) == null) {//get i or get tag??
+							this.blocks.add(index*m+i, new block(false,true,addr,data));
+							space=true;
+							//return true;
+						}
 					}
 				}
+				if(space)
+					break;
 					
 			}
-			return false; //miss policy... law LRU
+			if(!space) {
+				if(this.blocks.get(index*m).isDirtyBit()) {
+					dirtyInfo[0]=this.blocks.get(index*m).getInsOrData();
+					dirtyInfo[1]=addr;
+				}
+				this.blocks.add(index*m,new block(false,true,addr,data));
+			}
+			//return false; //miss policy... law LRU
 		}
-		
-		
-		
-//	}
-//	else{
-//		
-//		
-//		
-//		
-//	}
-		return false;
-}
+		return dirtyInfo;
+	}
 }
