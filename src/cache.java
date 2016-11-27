@@ -7,18 +7,16 @@ public class cache {
 	int m; //associativity
 	int c; //the number of cache blocks(number of lines)
 	int hitWritingPolicy; // 1 for write back and 2 for write through
-	int missWritingPolicy;// 1 for write allocate and 2 for write around
 	int cacheCycles; //number of cycles required to access data
 	ArrayList<block> blocks;
 	int misses;
 	
-	public cache(int s, int l, int m, int hitWritingPolicy, int missWritingPolicy, int cycles) {
+	public cache(int s, int l, int m, int hitWritingPolicy,  int cycles) {
 		this.s= s;
 		this.l=l;
 		this.m =m; 
 		this.c= s/l; 
 		this.hitWritingPolicy= hitWritingPolicy;
-		this.missWritingPolicy= missWritingPolicy;
 		this.cacheCycles= cycles;
 		this.blocks= new ArrayList<block>(this.c);
 	}
@@ -63,13 +61,6 @@ public class cache {
 		this.hitWritingPolicy = hitWritingPolicy;
 	}
 
-	public int getMissWritingPolicy() {
-		return missWritingPolicy;
-	}
-
-	public void setMissWritingPolicy(int missWritingPolicy) {
-		this.missWritingPolicy = missWritingPolicy;
-	}
 
 	public int getCacheCycles() {
 		return cacheCycles;
@@ -157,11 +148,16 @@ public class cache {
 		Object [] dirtyInfo= new Object [2];
 		boolean space=false;
 		if(m ==1){
-			if(this.blocks.get(index).isDirtyBit()) {
-				dirtyInfo[0]=this.blocks.get(index).getInsOrData();
-				dirtyInfo[1]=addr;
+			if(!this.blocks.isEmpty()) { //cache is empty
+				if(this.blocks.get(index).isDirtyBit()) {
+					dirtyInfo[0]=this.blocks.get(index).getInsOrData();
+					dirtyInfo[1]=addr;
+				}
+				this.blocks.add(index, new block(false,true,addr,data)); 
+				
 			}
-			this.blocks.add(index, new block(false,true,addr,data)); 
+			//else: make an action accordingly 
+			
 		}
 		if(m ==c){
 			if(blocks.size()==c) {
@@ -181,11 +177,15 @@ public class cache {
 			for(int k=0;(k/m)<=index;k=k+m){
 				if(k/m==index) {
 					for(int i=0;i<m;i++){
-						if(this.blocks.get(i) == null) {//get i or get tag??
-							this.blocks.add(index*m+i, new block(false,true,addr,data));
-							space=true;
-							//return true;
+						if(!this.blocks.isEmpty()) {
+							if(this.blocks.get(i) == null) {//get i or get tag??
+								this.blocks.add(index*m+i, new block(false,true,addr,data));
+								space=true;
+								//return true;
+							}
 						}
+						//else take action accordingly 
+						
 					}
 				}
 				if(space)
@@ -193,11 +193,14 @@ public class cache {
 					
 			}
 			if(!space) {
-				if(this.blocks.get(index*m).isDirtyBit()) {
-					dirtyInfo[0]=this.blocks.get(index*m).getInsOrData();
-					dirtyInfo[1]=addr;
+				if(!this.blocks.isEmpty()) {
+					if(this.blocks.get(index*m).isDirtyBit()) {
+						dirtyInfo[0]=this.blocks.get(index*m).getInsOrData();
+						dirtyInfo[1]=addr;
+					}
+					this.blocks.add(index*m,new block(false,true,addr,data));
 				}
-				this.blocks.add(index*m,new block(false,true,addr,data));
+				
 			}
 			//return false; //miss policy... law LRU
 		}
