@@ -8,7 +8,8 @@ public class cache {
 	int c; //the number of cache blocks(number of lines)
 	int hitWritingPolicy; // 1 for write back and 2 for write through
 	int cacheCycles; //number of cycles required to access data
-	ArrayList<block> blocks;
+	//ArrayList<block> blocks;
+	block[] blocks;
 	int misses;
 	
 	public cache(int s, int l, int m, int hitWritingPolicy,  int cycles) {
@@ -18,7 +19,8 @@ public class cache {
 		this.c= s/l; 
 		this.hitWritingPolicy= hitWritingPolicy;
 		this.cacheCycles= cycles;
-		this.blocks= new ArrayList<block>(this.c);
+		//this.blocks= new ArrayList<block>(this.c);
+		this.blocks= new block[c];
 	}
 	
 	public int getS() {
@@ -70,27 +72,39 @@ public class cache {
 		this.cacheCycles = cacheCycles;
 	}
 
-	public ArrayList<block> getBlocks() {
-		return blocks;
-	}
-
-	public void setBlocks(ArrayList<block> blocks) {
-		this.blocks = blocks;
-	}
+//	public ArrayList<block> getBlocks() {
+//		return blocks;
+//	}
+//
+//	public void setBlocks(ArrayList<block> blocks) {
+//		this.blocks = blocks;
+//	}
+	
+	
 	public int calculateOffset() {
 		return (int) (Math.log(this.l) / Math.log(2));
 	}
+	public block[] getBlocks() {
+		return blocks;
+	}
+
+	public void setBlocks(block[] blocks) {
+		this.blocks = blocks;
+	}
+
 	public int calculateIndex(int addr) {
 		int index=0;
-		if(this.m!=this.c)
-			index=(addr/l)%m;
+		if(this.m!=this.c) {
+			System.out.println("in calc index if");
+			index=(addr/l)%(c/m);
+		}
 			//index = (int) (Math.log(this.c/this.m)/ Math.log(2));
 		return index;	
 	}
 	public int calculateTag(int addr) {
 		int offset= calculateOffset();
 		int index= calculateIndex(addr);
-		return (addr/l)/m;
+		return (addr/l)/(c/m);
 		//return 16 - index -offset;
 	}
 	
@@ -101,20 +115,28 @@ public class cache {
 		int tag= calculateTag(addr);
 		if(m==1) { //direct mapped
 			//check if index holds tag
-			if(this.blocks.get(index).getTag()==tag) //hit
-				return this.blocks.get(index).getInsOrData();
-			else{
-				misses++;
-				return null;
+			System.out.println(this.blocks.length + " blocksLength");
+			System.out.println(index + " index in searchCache");
+			if(this.blocks[index]!=null){
+				System.out.println(index + " index");
+				System.out.println(this.blocks[index] + "tag") ;
+				if(this.blocks[index].getTag()==tag) //hit
+					return this.blocks[index].getInsOrData();
+				else{
+					misses++;
+					return null;
+				}
 			}
+			
+			
 		}
 		else if(m>1 && m<c){ //set associative 
 			for(int k=0;(k/m)<=index;k=k+m){
 				if(k/m == index){
 				for(int i=0;i<m;i++){
-					if(this.blocks.get(index*m+i).getTag()==tag){
+					if(this.blocks[index*m+i].getTag()==tag){
 						foundS = true;
-						return this.blocks.get(index*m+i).getInsOrData();
+						return this.blocks[index*m+i].getInsOrData();
 					}
 				}
 				if(!foundS)
@@ -126,10 +148,10 @@ public class cache {
 			
 		}
 		if(m==c) {//fully associative
-			for(int i=0; i<blocks.size(); i++){
-				if(this.blocks.get(i).getTag()==tag){
+			for(int i=0; i<blocks.length; i++){
+				if(this.blocks[i].getTag()==tag){
 					foundF = true;
-					return this.blocks.get(i).getInsOrData();
+					return this.blocks[i].getInsOrData();
 				}
 				
 			}
@@ -141,35 +163,37 @@ public class cache {
 		
 	}
 	public Object[] insert(int addr, Object data){
-		
+		System.out.println("in insert in cache");
 		int index = calculateIndex(addr);
 		int offset = calculateOffset();
 		int tag = calculateTag(addr);
 		Object [] dirtyInfo= new Object [2];
 		boolean space=false;
+		System.out.println("m " + m);
 		if(m ==1){
-			if(!this.blocks.isEmpty()) { //cache is empty
-				if(this.blocks.get(index).isDirtyBit()) {
-					dirtyInfo[0]=this.blocks.get(index).getInsOrData();
-					dirtyInfo[1]=addr;
+			if(this.blocks[index]!=null) { //cache is empty
+				if(this.blocks[index].isDirtyBit()) {
+					dirtyInfo[0]=this.blocks[index].getInsOrData();
+					dirtyInfo[1]=this.blocks[index].getMainMemoryAddr();
 				}
-				this.blocks.add(index, new block(false,true,addr,data)); 
 				
 			}
+			this.blocks[index]= new block(false,true,addr,data,tag);
+			
 			//else: make an action accordingly 
 			
 		}
 		if(m ==c){
-			if(blocks.size()==c) {
-				if(this.blocks.get(0).isDirtyBit()) {
-					dirtyInfo[0]=this.blocks.get(0).getInsOrData();
-					dirtyInfo[1]=addr;
+			if(blocks.length==c) {
+				if(this.blocks[0].isDirtyBit()) {
+					dirtyInfo[0]=this.blocks[0].getInsOrData();
+					dirtyInfo[1]=this.blocks[0].getMainMemoryAddr();
 				}
-				this.blocks.add(0, new block(false,true,addr,data));
+				this.blocks[0]= new block(false,true,addr,data,tag);
 				//return false;//insert at position 0
 			}
 			else {
-				this.blocks.add(new block(false,true,addr,data)); 			
+				this.blocks[blocks.length]=new block(false,true,addr,data, tag); 	
 				//return true;
 			}
 		}
@@ -177,9 +201,9 @@ public class cache {
 			for(int k=0;(k/m)<=index;k=k+m){
 				if(k/m==index) {
 					for(int i=0;i<m;i++){
-						if(!this.blocks.isEmpty()) {
-							if(this.blocks.get(i) == null) {//get i or get tag??
-								this.blocks.add(index*m+i, new block(false,true,addr,data));
+						if(!(this.blocks.length==0)) {
+							if(this.blocks[i] == null) {//get i or get tag??
+								this.blocks[index*m+i]= new block(false,true,addr,data, tag);
 								space=true;
 								//return true;
 							}
@@ -193,17 +217,29 @@ public class cache {
 					
 			}
 			if(!space) {
-				if(!this.blocks.isEmpty()) {
-					if(this.blocks.get(index*m).isDirtyBit()) {
-						dirtyInfo[0]=this.blocks.get(index*m).getInsOrData();
-						dirtyInfo[1]=addr;
+				if(!(this.blocks.length==0)) {
+					if(this.blocks[index*m].isDirtyBit()) {
+						dirtyInfo[0]=this.blocks[index*m].getInsOrData();
+						dirtyInfo[1]=this.blocks[index*m].getMainMemoryAddr();
 					}
-					this.blocks.add(index*m,new block(false,true,addr,data));
+					
 				}
-				
+				this.blocks[index*m]= new block(false,true,addr,data, tag);
 			}
 			//return false; //miss policy... law LRU
 		}
 		return dirtyInfo;
+	}
+	public String printCache(){
+		System.out.println(blocks.length + "size of blocks in cache");
+		String r= "";
+		System.out.println(blocks[1] + "size of blocks in cache");
+		for(int i=0; i<blocks.length; i++) {
+			if(blocks[i]!=null)
+				r+= (short) new Integer ((int) blocks[i].insOrData).intValue() + ":" + blocks[i].getMainMemoryAddr() + " tag" + blocks[i].getTag() + " index" + i + " dirty" + blocks[i].dirtyBit + "\n"; 
+		}
+		return r;
+		 
+		
 	}
 }

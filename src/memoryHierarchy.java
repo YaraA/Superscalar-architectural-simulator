@@ -61,11 +61,16 @@ public class memoryHierarchy {
 	}
 
 	public short getData(int address) {
+		System.out.println("in getData + address" + address);
 		Object data = null;
 		boolean found = false;
 		int count = 0;
+		System.out.println("in getData + dataCaches.size" + dataCaches.size());
+		System.out.println("size of block: " + dataCaches.get(0).blocks.length);
+		
 		for (int i = 0; i < dataCaches.size(); i++) {
-			if (!dataCaches.get(i).blocks.isEmpty()) {
+			
+			if (!(dataCaches.get(i).blocks.length == 0)) {
 				data = dataCaches.get(i).searchCache(address);
 				if (data != null) {
 					// return (short) data;
@@ -80,46 +85,53 @@ public class memoryHierarchy {
 				count++;
 
 		}
+		System.out.println("found "+ found + " count " + count);
 		if (count == 0 && !found)
 			insertIn(dataCaches.size(), address, data);
-		else {
-			insertIn(count, address, data);
-		}
-		if (!found) {
+		else if (count==dataCaches.size()) {
+			
 			data = mainMemory.findData(address);
 			// this.insertDataInAllCaches(address,data);
 			this.insertIn(dataCaches.size(), address, data);
 		}
+		else {
+			System.out.println("in else");
+			this.insertIn(count, address, data);
+		}
+		
 		return (short) new Integer ((int) data).intValue();
 
 	}
 
 	private void insertIn(int count, int address, Object data) {
 		for (int i = 0; i < count; i++) {
-			Object[] o = dataCaches.get(i).insert(address, data);
+			Object[] o = dataCaches.get(i).insert(address, data); //o[1]: address; o[0]: data
+			System.out.println("insertt");
+			System.out.println(o[0] + "data being replaced");
+			System.out.println(o[1] + "address being replaced");
 			if (o[0]!= null && o[1]!=null) { // if insert caused replacement of dirty block
 				
 				
-				mainMemory.updateDataMem((int) o[0], o[1]);
+				mainMemory.updateDataMem((int) o[1], o[0]);
 				for (int j = i + 1; j < noOfLevels; j++) {
-					ArrayList<block> blocks = dataCaches.get(j).getBlocks();
+					block[] blocks = dataCaches.get(j).getBlocks();
 					int m = dataCaches.get(j).getM();
 					int c = dataCaches.get(j).getC();
 					int index = dataCaches.get(j).calculateIndex((int) o[1]);
 					if (m == 1) {
-						blocks.get(index).setInsOrData(o[0]);
+						blocks[index].setInsOrData(o[0]);
 					}
 					if (m > 1 && m < c) {
 						for (int k = index * m; k < index * m + m; k++) {
-							if ((int) o[1] == blocks.get(k).getMainMemoryAddr()) {
-								blocks.get(k).setInsOrData(o[0]);
+							if ((int) o[1] == blocks[k].getMainMemoryAddr()) {
+								blocks[k].setInsOrData(o[0]);
 							}
 						}
 					}
 					if (m == c) {
-						for (int k = 0; k < blocks.size(); k++) {
-							if ((int) o[1] == blocks.get(k).getMainMemoryAddr()) {
-								blocks.get(k).setInsOrData(o[0]);
+						for (int k = 0; k < blocks.length; k++) {
+							if ((int) o[1] == blocks[k].getMainMemoryAddr()) {
+								blocks[k].setInsOrData(o[0]);
 							}
 						}
 					}
@@ -134,7 +146,7 @@ public class memoryHierarchy {
 
 		Object ins;
 		for (int i = 0; i < insCaches.size(); i++) {
-			if (!insCaches.get(i).blocks.isEmpty()) {
+			if (!(insCaches.get(i).blocks.length == 0)) {
 				ins = insCaches.get(i).searchCache(address);
 				if (ins != null) {
 					return (String) ins;
@@ -197,27 +209,29 @@ public class memoryHierarchy {
 	}
 
 	public void writeBack(int cacheLevel, int addr, Object data) {
-		ArrayList<block> blocks = dataCaches.get(cacheLevel).getBlocks();
+		block [] blocks = dataCaches.get(cacheLevel).getBlocks();
 		int m = dataCaches.get(cacheLevel).getM();
 		int c = dataCaches.get(cacheLevel).getC();
 		int index = dataCaches.get(cacheLevel).calculateIndex(addr);
 		if (m == 1) {
-			blocks.get(index).setInsOrData(data);
-			blocks.get(index).setDirtyBit(true);
+			if (addr == blocks[index].getMainMemoryAddr()) {
+			blocks[index].setInsOrData(data);
+			blocks[index].setDirtyBit(true);
+			}
 		}
 		if (m > 1 && m < c) {
 			for (int i = index * m; i < index * m + m; i++) {
-				if (addr == blocks.get(i).getMainMemoryAddr()) {
-					blocks.get(i).setInsOrData(data);
-					blocks.get(i).setDirtyBit(true);
+				if (addr == blocks[i].getMainMemoryAddr()) {
+					blocks[i].setInsOrData(data);
+					blocks[i].setDirtyBit(true);
 				}
 			}
 		}
 		if (m == c) {
-			for (int i = 0; i < blocks.size(); i++) {
-				if (addr == blocks.get(i).getMainMemoryAddr()) {
-					blocks.get(i).setInsOrData(data);
-					blocks.get(i).setDirtyBit(true);
+			for (int i = 0; i < blocks.length; i++) {
+				if (addr == blocks[i].getMainMemoryAddr()) {
+					blocks[i].setInsOrData(data);
+					blocks[i].setDirtyBit(true);
 				}
 			}
 		}
@@ -244,18 +258,18 @@ public class memoryHierarchy {
 		// int levels=Integer.parseInt(sAddr);
 		// int[] m= new int[9];
 		// int[] associativity= new int[levels];
-		int levels = 3;
-		int[] associativity = { 1, 1, 1 };
-		int[] sizeOfCache = { 32, 64, 128 };
-		int[] sizeOfCacheLine = { 16, 16, 16 };
-		int[] hitPolicy = { 1, 1, 1 };
-		int[] cyclesNumber = { 1, 3, 2 };
+		int levels = 2;
+		int[] associativity = { 1,1};
+		int[] sizeOfCache = { 32,64};
+		int[] sizeOfCacheLine = { 16,16};
+		int[] hitPolicy = { 2,2};
+		int[] cyclesNumber = { 1,1};
 		int memoryCycles = 30;
 		String programAssembly = "ADD R1,R2/ ADD R1,R2/ ADD R1,R2/ ADD R1,R2/SUB R1,R2/ADD R1,R2/ADD R1,R2/ADD R1,R2";
 		int programStartingAddress = 0;
 		
-		int[] programDataAddress = { 0, 1, 2 , 3, 4,5 };
-		Object[] programData =     { 1, 2, 3 , 4, 5,6 };
+		int[] programDataAddress = { 320, 500, 160};
+		Object[] programData =     { 5, 6, 7};
 		// int[] sizeOfCache = new int[levels];
 		// int [] sizeOfCacheLine = new int [levels];
 		// int [] hitPolicy = new int [levels];
@@ -327,9 +341,24 @@ public class memoryHierarchy {
 				sizeOfCacheLine, associativity, hitPolicy, cyclesNumber,
 				memoryCycles, programAssembly, programStartingAddress,
 				programData, programDataAddress);
-		//mH.getData(0);
-		System.out.println(mH.getData(3));
-		System.out.println(mH.getInstruction(4));
+		//mH.getData(400);
+		
+		//System.out.println(mH.getData(400) + "hi");
+		System.out.println(mH.getData(500) + "hi2");
+		System.out.println(mH.getData(320) + "hi");
+		System.out.println(mH.getData(160) + "hi");
+		mH.Write(320, 80);
+		//mH.getData(320);
+		System.out.println(mH.mainMemory.findData(160) + "data in mem");
+		
+		//System.out.println(mH.getInstruction(4));
+		System.out.println(mH.dataCaches.size() + "number of caches");
+		System.out.println(programDataAddress[1] + "address in mem");
+		System.out.println(mH.dataCaches.get(0).calculateIndex((int) programDataAddress[1]) + "index in mem");
+		System.out.println(mH.dataCaches.get(0).calculateTag((int) programDataAddress[1])+ "tag in mem");
+		System.out.println(mH.dataCaches.get(0).printCache() + "cache: " + 1);
+		System.out.println(mH.dataCaches.get(1).printCache() + "cache: " + 2);
+		
 		// mH.getInstruction(m[7]);
 		// mH.getInstruction(m[7]);
 		// mH.insertDataInAllCaches(m[8], s[1]);

@@ -7,14 +7,16 @@ public class block {
 	int tag;
 	Object insOrData;  //in case of dataCache this will hold and in case of insCache this will hold an instruction
 	
-	public block(boolean dirtyBit, boolean validBit, int mainMemoryAddr, Object insOrData){
+	public block(boolean dirtyBit, boolean validBit, int mainMemoryAddr, Object insOrData,int tag){
 		this.dirtyBit= dirtyBit;
 		this.validBit= validBit;
 		this.mainMemoryAddr= mainMemoryAddr;
 		this.insOrData= insOrData;
+		this.tag = tag;
 	
 	}
 	
+
 	public int getTag() {
 		return tag;
 	}
