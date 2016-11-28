@@ -95,7 +95,7 @@ public class cache {
 	public int calculateIndex(int addr) {
 		int index=0;
 		if(this.m!=this.c) {
-			System.out.println("in calc index if");
+			//System.out.println("in calc index if");
 			index=(addr/l)%(c/m);
 		}
 			//index = (int) (Math.log(this.c/this.m)/ Math.log(2));
@@ -115,11 +115,11 @@ public class cache {
 		int tag= calculateTag(addr);
 		if(m==1) { //direct mapped
 			//check if index holds tag
-			System.out.println(this.blocks.length + " blocksLength");
-			System.out.println(index + " index in searchCache");
+			//System.out.println(this.blocks.length + " blocksLength");
+			//System.out.println(index + " index in searchCache");
 			if(this.blocks[index]!=null){
-				System.out.println(index + " index");
-				System.out.println(this.blocks[index] + "tag") ;
+				//System.out.println(index + " index");
+				//System.out.println(this.blocks[index] + "tag") ;
 				if(this.blocks[index].getTag()==tag) //hit
 					return this.blocks[index].getInsOrData();
 				else{
@@ -134,10 +134,13 @@ public class cache {
 			for(int k=0;(k/m)<=index;k=k+m){
 				if(k/m == index){
 				for(int i=0;i<m;i++){
-					if(this.blocks[index*m+i].getTag()==tag){
-						foundS = true;
-						return this.blocks[index*m+i].getInsOrData();
+					if(this.blocks[index*m+i]!=null){
+						if(this.blocks[index*m+i].getTag()==tag){
+							foundS = true;
+							return this.blocks[index*m+i].getInsOrData();
+						}
 					}
+					
 				}
 				if(!foundS)
 					misses++;
@@ -169,7 +172,7 @@ public class cache {
 		int tag = calculateTag(addr);
 		Object [] dirtyInfo= new Object [2];
 		boolean space=false;
-		System.out.println("m " + m);
+		//System.out.println("m " + m);
 		if(m ==1){
 			if(this.blocks[index]!=null) { //cache is empty
 				if(this.blocks[index].isDirtyBit()) {
@@ -202,10 +205,10 @@ public class cache {
 				if(k/m==index) {
 					for(int i=0;i<m;i++){
 						if(!(this.blocks.length==0)) {
-							if(this.blocks[i] == null) {//get i or get tag??
+							if(this.blocks[index*m+i] == null) {//get i or get tag??
 								this.blocks[index*m+i]= new block(false,true,addr,data, tag);
 								space=true;
-								//return true;
+								break;
 							}
 						}
 						//else take action accordingly 
@@ -233,7 +236,7 @@ public class cache {
 	public String printCache(){
 		System.out.println(blocks.length + "size of blocks in cache");
 		String r= "";
-		System.out.println(blocks[1] + "size of blocks in cache");
+		//System.out.println(blocks[1] + "size of blocks in cache");
 		for(int i=0; i<blocks.length; i++) {
 			if(blocks[i]!=null)
 				r+= (short) new Integer ((int) blocks[i].insOrData).intValue() + ":" + blocks[i].getMainMemoryAddr() + " tag" + blocks[i].getTag() + " index" + i + " dirty" + blocks[i].dirtyBit + "\n"; 
