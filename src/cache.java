@@ -113,6 +113,7 @@ public class cache {
 		boolean foundS = false;
 		int index= calculateIndex(addr);
 		int tag= calculateTag(addr);
+		int strAdd = memoryHierarchy.programStartingaddr;
 		if(m==1) { //direct mapped
 			//check if index holds tag
 			//System.out.println(this.blocks.length + " blocksLength");
@@ -120,7 +121,8 @@ public class cache {
 			if(this.blocks[index]!=null){
 				//System.out.println(index + " index");
 				//System.out.println(this.blocks[index] + "tag") ;
-				if(this.blocks[index].getTag()==tag) //hit
+				
+				if(this.blocks[index].getTag()==tag && addr == strAdd+ index) //hit
 					return this.blocks[index].getInsOrData();
 				else{
 					misses++;
@@ -135,7 +137,7 @@ public class cache {
 				if(k/m == index){
 				for(int i=0;i<m;i++){
 					if(this.blocks[index*m+i]!=null){
-						if(this.blocks[index*m+i].getTag()==tag){
+						if(this.blocks[index*m+i].getTag()==tag && addr == strAdd+index){
 							foundS = true;
 							return this.blocks[index*m+i].getInsOrData();
 						}
@@ -153,7 +155,7 @@ public class cache {
 		if(m==c) {//fully associative
 			for(int i=0; i<blocks.length; i++){
 				if(this.blocks[i] != null) {
-					if(this.blocks[i].getTag()==tag){
+					if(this.blocks[i].getTag()==tag && addr == strAdd+index){
 						foundF = true;
 						return this.blocks[i].getInsOrData();
 					}
@@ -248,7 +250,7 @@ public class cache {
 		//System.out.println(blocks[1] + "size of blocks in cache");
 		for(int i=0; i<blocks.length; i++) {
 			if(blocks[i]!=null)
-				r+= (short) new Integer ((int) blocks[i].insOrData).intValue() + ":" + blocks[i].getMainMemoryAddr() + " tag" + blocks[i].getTag() + " index" + i + " dirty" + blocks[i].dirtyBit + "\n"; 
+				r+= (String)  blocks[i].insOrData + ":" + blocks[i].getMainMemoryAddr() + " tag" + blocks[i].getTag() + " index" + i + " dirty" + blocks[i].dirtyBit + "\n"; 
 		}
 		return r;
 		 

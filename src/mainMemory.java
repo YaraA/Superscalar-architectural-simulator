@@ -66,8 +66,10 @@ public class mainMemory {
 	public void insertProgram(String assemblyProgram, int programStartingaddr) {
 		String[] linesOfCode= assemblyProgram.split("/");
 		int noOfLines= linesOfCode.length; //number of lines in assembly program
-		for(int i=0; i<noOfLines; i++)
+		for(int i=0; i<noOfLines; i++) {
 			insMainMem[programStartingaddr +i] = linesOfCode[i]; 
+			System.out.println("In mainMem: " + programStartingaddr +i +"code: " + linesOfCode[i]  );
+		}
 		
 	}
 

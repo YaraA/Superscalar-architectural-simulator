@@ -8,11 +8,12 @@ public class memoryHierarchy {
 	ArrayList<cache> dataCaches;
 	ArrayList<cache> insCaches;
 	int noOfLevels;
-
+	public static 	int programStartingaddr = 0;
 	public memoryHierarchy(int noOfLevels, int[] s, int[] l, int[] m,
 			int[] hitWritingPolicy, int[] cacheCycles, int memoryCycles,
 			String assemblyProgram, int programStartingaddr,
 			Object[] programData, int[] dataAddr) {
+		this.programStartingaddr = programStartingaddr;
 		this.mainMemory = new mainMemory(memoryCycles);
 		// this.insMainMemory= new mainMemory(memoryCycles);
 		this.dataCaches = new ArrayList<cache>();
@@ -146,7 +147,6 @@ public class memoryHierarchy {
 	}
 
 	public String getInstruction(int address) {
-
 		Object ins;
 		for (int i = 0; i < insCaches.size(); i++) {
 			if (!(insCaches.get(i).blocks.length == 0)) {
@@ -264,19 +264,21 @@ public class memoryHierarchy {
 		// int[] m= new int[9];
 		// int[] associativity= new int[levels];
 		int levels = 2;
-		int[] associativity = {2,3};
-		int[] sizeOfCache = {32,48};
+		int[] associativity = {2,2};
+		int[] sizeOfCache = {96,192};
 		int[] sizeOfCacheLine = { 16,16};
-		int[] hitPolicy = { 1,1};
+		int[] hitPolicy = { 2,2};
 		int[] cyclesNumber = {1,1};
 		int memoryCycles = 30;
-		String programAssembly = "ADD R1,R2/ ADD R1,R2/ ADD R1,R2/ ADD R1,R2/SUB R1,R2/ADD R1,R2/ADD R1,R2/ADD R1,R2";
-		int programStartingAddress = 0;
+		String programAssembly = "ADD R1,R2/DiV R1,R2/Mu R1,R2/Yar R1,R2/SUB R1,R2/ADD R1,R2/ADD R1,R2/ADD R1,R2";
+		String [] assembPro= programAssembly.split("/");
+				
+		int programStartingAddress = 100;
 		
-//		int[] programDataAddress = { 320, 500, 160, 4096, 772, 804, 48, 144, 513, 890, 16};
-//		Object[] programData =     { 5, 6, 7, 1, 100, 50, 90, 89, 77, 45, 52};
-		int[] programDataAddress = { 16, 45, 87};
-		Object[] programData =     { 5, 6, 7};
+		int[] programDataAddress = { 320, 500, 160, 4096, 772, 804, 48, 144, 513, 890, 16};
+		Object[] programData =     { 5, 6, 7, 1, 100, 50, 90, 89, 77, 45, 52};
+//		int[] programDataAddress = { 16, 45, 87, 56};
+//		Object[] programData =     { 5, 6, 7, 3};
 		// int[] sizeOfCache = new int[levels];
 		// int [] sizeOfCacheLine = new int [levels];
 		// int [] hitPolicy = new int [levels];
@@ -349,6 +351,12 @@ public class memoryHierarchy {
 				memoryCycles, programAssembly, programStartingAddress,
 				programData, programDataAddress);
 		//mH.getData(400);
+		for(int i=0; i<assembPro.length; i++){
+			System.out.println(programStartingAddress+i);
+			System.out.println(mH.getInstruction(programStartingAddress+i) + " hiIns" + "address:  " + i);
+			//System.out.println(getInstruction(programStartingAddress + i));
+			//System.out.println(assembPro[i]);
+		}
 		
 		//System.out.println(mH.getData(400) + "hi");
 //		System.out.println(mH.getData(500) + "hi2");
@@ -359,10 +367,17 @@ public class memoryHierarchy {
 //		System.out.println(mH.getData(804) + "hi");
 //		System.out.println(mH.getData(48) + "hi");
 //		System.out.println(mH.getData(144) + "hi");
-		mH.getData(16);
-		mH.getData(45);
-		mH.getData(87);
-		mH.getData(16);
+//		mH.getData(16);
+//		mH.getData(45);
+//		mH.getData(87);
+	//	mH.getData(16);
+		//mH.Write(16, 11);
+		//mH.getData(87);
+//		mH.getData(56);
+//		mH.Write(16, 11);
+//		mH.Write(87, 99);
+//		mH.Write(16, 110);
+		//mH.getData(56);
 //		mH.getData(160);
 //		mH.getData(4096);
 //		mH.getData(772);
@@ -379,7 +394,7 @@ public class memoryHierarchy {
 //		mH.Write(500, 560);
 		//System.out.println(mH.getData(4096) + "hi");
 //		//mH.getData(320);
-		//System.out.println(mH.mainMemory.findData(500) + "data in mem");
+		//System.out.println(mH.mainMemory.findData(16) + "data in mem");
 		
 		//System.out.println(mH.getInstruction(4));
 		//System.out.println(mH.dataCaches.size() + "number of caches");
@@ -405,7 +420,7 @@ public class memoryHierarchy {
 //		System.out.println(mH.dataCaches.get(0).calculateIndex((int) programDataAddress[7]) + " 890 index in mem");
 //		System.out.println(mH.dataCaches.get(0).calculateTag((int) programDataAddress[7])+ " 890 tag in mem");
 		System.out.println(mH.dataCaches.get(0).printCache() + "cache: " + 1);
-		System.out.println(mH.dataCaches.get(1).printCache() + "cache: " + 2);
+		//System.out.println(mH.dataCaches.get(1).printCache() + "cache: " + 2);
 		
 		// mH.getInstruction(m[7]);
 		// mH.getInstruction(m[7]);
