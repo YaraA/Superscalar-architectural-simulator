@@ -5,7 +5,7 @@ public class Functional_Unit {
 	boolean busy;
 	int No_of_exec_cycles;
 	Instruction instruction;
-	String DestReg;
+	//String DestReg;
 	
 	public Functional_Unit(UnitType type, int No_of_exec_cycles){
 		this.type = type;
@@ -21,7 +21,6 @@ public class Functional_Unit {
 		
 		if(!instruction.type.equalsIgnoreCase("jmp")){
 		   if(instruction.type.equalsIgnoreCase("addi") 
-				  || instruction.type.equalsIgnoreCase("beq") 
 				  	|| instruction.type.equalsIgnoreCase("lw") 
 				  		|| instruction.type.equalsIgnoreCase("sw")){
 			 srcReg1 = instruction.Vj;
@@ -55,11 +54,11 @@ public class Functional_Unit {
 		 short address=(short) (srcReg1+srcReg2);
 		 result= readFromMemory(address);
 		}
-		if(instruction.type.equalsIgnoreCase("SW")  && type==UnitType.STORE)
-		{
-		short address=(short) (srcReg1+srcReg2);
-		writeToMemory(address,destReg);
-		}
+//		if(instruction.type.equalsIgnoreCase("SW")  && type==UnitType.STORE)
+//		{
+//		//short address=(short) (srcReg1+srcReg2);
+//		writeToMemory(address,destReg);
+//		}
 		
 		
 		return result;
@@ -71,6 +70,12 @@ public class Functional_Unit {
 	
 	void writeToMemory(short address, short value){
 		
+	}
+	
+	public String toString(){
+		
+		return "Type: " + type + " ,Busy: " + busy + " ,Instruction: " + instruction.toString() 
+				+ "\nNo of Execution Cycles: "+ No_of_exec_cycles;
 	}
 	
 }

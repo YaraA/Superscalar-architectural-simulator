@@ -1,4 +1,3 @@
-import java.util.Hashtable;
 
 
 public class Register_File {

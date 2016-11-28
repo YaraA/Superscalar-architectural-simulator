@@ -44,5 +44,10 @@ public class ROBEntry {
 		this.ready = ready;
 	}
 	
+	public String toString(){
+		return "Entry ID: " + id + " , Destination: " + destination + " , Type: " + type + " , Value: " + 
+				value + " , Ready: " + ready + " , Empty: " + empty;
+	}
+	
 	
 }

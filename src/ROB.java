@@ -1,4 +1,3 @@
-import java.util.Queue;
 
 
 public class ROB {
@@ -12,8 +11,16 @@ public class ROB {
 		ROBContent = new ROBEntry[sizeOfROB];
 		
 		for(int i = 0; i < ROBContent.length;i++){
-			ROBContent[i].setId(i);
+			ROBContent[i] = new ROBEntry(i);
 		}
+	}
+	
+	public String toString(){
+		String table = "";
+		for(int i = 0; i < ROBContent.length; i++)
+			table += ROBContent[i].toString() + "\n";
+		
+		return table;
 	}
 
 }
