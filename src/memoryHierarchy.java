@@ -224,10 +224,12 @@ public class memoryHierarchy {
 		}
 		if (m > 1 && m < c) {
 			for (int i = index * m; i < index * m + m; i++) {
-				if (addr == blocks[i].getMainMemoryAddr()) {
-					blocks[i].setInsOrData(data);
-					blocks[i].setDirtyBit(true);
-				}
+				if(blocks[i] !=null) {
+					if (addr == blocks[i].getMainMemoryAddr()) {
+						blocks[i].setInsOrData(data);
+						blocks[i].setDirtyBit(true);
+					}
+				}	
 			}
 		}
 		if (m == c) {
@@ -262,8 +264,8 @@ public class memoryHierarchy {
 		// int[] m= new int[9];
 		// int[] associativity= new int[levels];
 		int levels = 2;
-		int[] associativity = { 2,2};
-		int[] sizeOfCache = {96,192};
+		int[] associativity = {2,3};
+		int[] sizeOfCache = {32,48};
 		int[] sizeOfCacheLine = { 16,16};
 		int[] hitPolicy = { 1,1};
 		int[] cyclesNumber = {1,1};
@@ -271,8 +273,10 @@ public class memoryHierarchy {
 		String programAssembly = "ADD R1,R2/ ADD R1,R2/ ADD R1,R2/ ADD R1,R2/SUB R1,R2/ADD R1,R2/ADD R1,R2/ADD R1,R2";
 		int programStartingAddress = 0;
 		
-		int[] programDataAddress = { 320, 500, 160, 4096, 772, 804, 48, 144};
-		Object[] programData =     { 5, 6, 7, 1, 100, 50, 90, 89};
+//		int[] programDataAddress = { 320, 500, 160, 4096, 772, 804, 48, 144, 513, 890, 16};
+//		Object[] programData =     { 5, 6, 7, 1, 100, 50, 90, 89, 77, 45, 52};
+		int[] programDataAddress = { 16, 45, 87};
+		Object[] programData =     { 5, 6, 7};
 		// int[] sizeOfCache = new int[levels];
 		// int [] sizeOfCacheLine = new int [levels];
 		// int [] hitPolicy = new int [levels];
@@ -355,30 +359,37 @@ public class memoryHierarchy {
 //		System.out.println(mH.getData(804) + "hi");
 //		System.out.println(mH.getData(48) + "hi");
 //		System.out.println(mH.getData(144) + "hi");
-		mH.getData(500);
-		mH.getData(320);
-		mH.getData(160);
-		mH.getData(4096);
-		mH.getData(772);
-		mH.getData(804);
-		mH.getData(48);
-		mH.getData(144);
-		System.out.println(mH.getData(500) + "hi");
+		mH.getData(16);
+		mH.getData(45);
+		mH.getData(87);
+		mH.getData(16);
+//		mH.getData(160);
+//		mH.getData(4096);
+//		mH.getData(772);
+//		mH.getData(804);
+//		mH.getData(48);
+//		mH.getData(144);
+//		mH.getData(513);
+//		mH.getData(890);
+		//System.out.println(mH.getData(500) + "hi");
 		
-		//mH.Write(320, 80);
+		//mH.Write(144, 800);
+//		mH.Write(500, 298);
+//		mH.getData(16);
+//		mH.Write(500, 560);
 		//System.out.println(mH.getData(4096) + "hi");
 //		//mH.getData(320);
-//		System.out.println(mH.mainMemory.findData(320) + "data in mem");
+		//System.out.println(mH.mainMemory.findData(500) + "data in mem");
 		
 		//System.out.println(mH.getInstruction(4));
-		System.out.println(mH.dataCaches.size() + "number of caches");
+		//System.out.println(mH.dataCaches.size() + "number of caches");
 		//System.out.println(programDataAddress[1] + "address in mem");
-		//System.out.println(mH.dataCaches.get(0).calculateIndex((int) programDataAddress[0]) + " 320 index in mem");
-//		System.out.println(mH.dataCaches.get(0).calculateTag((int) programDataAddress[0])+ " 320 tag in mem");
-//		System.out.println(mH.dataCaches.get(0).calculateIndex((int) programDataAddress[1]) + " 500 index in mem");
-//		System.out.println(mH.dataCaches.get(0).calculateTag((int) programDataAddress[1])+ " 500 tag in mem");
-//		System.out.println(mH.dataCaches.get(0).calculateIndex((int) programDataAddress[2]) + " 160 index in mem");
-//		System.out.println(mH.dataCaches.get(0).calculateTag((int) programDataAddress[2])+ " 160 tag in mem");
+		System.out.println(mH.dataCaches.get(0).calculateIndex((int) programDataAddress[0]) + " 16 index in mem");
+		System.out.println(mH.dataCaches.get(0).calculateTag((int) programDataAddress[0])+ " 16 tag in mem");
+		System.out.println(mH.dataCaches.get(0).calculateIndex((int) programDataAddress[1]) + " 45 index in mem");
+		System.out.println(mH.dataCaches.get(0).calculateTag((int) programDataAddress[1])+ " 45 tag in mem");
+		System.out.println(mH.dataCaches.get(0).calculateIndex((int) programDataAddress[2]) + " 87 index in mem");
+		System.out.println(mH.dataCaches.get(0).calculateTag((int) programDataAddress[2])+ " 87 tag in mem");
 //		System.out.println(mH.dataCaches.get(0).calculateIndex((int) programDataAddress[3]) + " 4096 index in mem");
 //		System.out.println(mH.dataCaches.get(0).calculateTag((int) programDataAddress[3])+ " 4096 tag in mem");
 //		System.out.println(mH.dataCaches.get(0).calculateIndex((int) programDataAddress[4]) + " 772 index in mem");
@@ -389,6 +400,10 @@ public class memoryHierarchy {
 //		System.out.println(mH.dataCaches.get(0).calculateTag((int) programDataAddress[6])+ " 48 tag in mem");
 //		System.out.println(mH.dataCaches.get(0).calculateIndex((int) programDataAddress[7]) + " 144 index in mem");
 //		System.out.println(mH.dataCaches.get(0).calculateTag((int) programDataAddress[7])+ " 144 tag in mem");
+//		System.out.println(mH.dataCaches.get(0).calculateIndex((int) programDataAddress[7]) + " 513 index in mem");
+//		System.out.println(mH.dataCaches.get(0).calculateTag((int) programDataAddress[7])+ " 513 tag in mem");
+//		System.out.println(mH.dataCaches.get(0).calculateIndex((int) programDataAddress[7]) + " 890 index in mem");
+//		System.out.println(mH.dataCaches.get(0).calculateTag((int) programDataAddress[7])+ " 890 tag in mem");
 		System.out.println(mH.dataCaches.get(0).printCache() + "cache: " + 1);
 		System.out.println(mH.dataCaches.get(1).printCache() + "cache: " + 2);
 		

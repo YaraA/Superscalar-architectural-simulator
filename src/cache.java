@@ -152,10 +152,13 @@ public class cache {
 		}
 		if(m==c) {//fully associative
 			for(int i=0; i<blocks.length; i++){
-				if(this.blocks[i].getTag()==tag){
-					foundF = true;
-					return this.blocks[i].getInsOrData();
+				if(this.blocks[i] != null) {
+					if(this.blocks[i].getTag()==tag){
+						foundF = true;
+						return this.blocks[i].getInsOrData();
+					}
 				}
+				
 				
 			}
 			if(!foundF)
@@ -187,18 +190,24 @@ public class cache {
 			
 		}
 		if(m ==c){
-			if(blocks.length==c) {
-				if(this.blocks[0].isDirtyBit()) {
-					dirtyInfo[0]=this.blocks[0].getInsOrData();
-					dirtyInfo[1]=this.blocks[0].getMainMemoryAddr();
+			boolean empty = false;
+			for (int i =0; i<blocks.length ; i++){ 
+				if(this.blocks[i] == null){
+					this.blocks[i]=new block(false,true,addr,data, tag);
+					empty = true;
+					break;
+				}
+			}
+			if(!empty) {
+				if(this.blocks[0] !=null) {
+					if(this.blocks[0].isDirtyBit()) {
+						dirtyInfo[0]=this.blocks[0].getInsOrData();
+						dirtyInfo[1]=this.blocks[0].getMainMemoryAddr();
+					}
 				}
 				this.blocks[0]= new block(false,true,addr,data,tag);
-				//return false;//insert at position 0
 			}
-			else {
-				this.blocks[blocks.length]=new block(false,true,addr,data, tag); 	
-				//return true;
-			}
+
 		}
 		if(m>1 && m<c) {
 			for(int k=0;(k/m)<=index;k=k+m){
